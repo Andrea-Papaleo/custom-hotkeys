@@ -1,10 +1,10 @@
-import hotkeys, { HotkeysEvent, KeyHandler } from "hotkeys-js";
-import React, { useCallback, useEffect, useRef } from "react";
+//@ts-nocheck
+import hotkeys from "../hotkeys"; //{ HotkeysEvent, KeyHandler }
+import React, { useCallback, useEffect } from "react";
 
 type AvailableTags = "INPUT" | "TEXTAREA" | "SELECT";
 
 // We implement our own custom filter system.
-hotkeys.filter = () => true;
 
 const tagFilter = (
   { target }: KeyboardEvent,
@@ -22,6 +22,17 @@ const tagFilter = (
 const isKeyboardEventTriggeredByInput = (ev: KeyboardEvent) => {
   return tagFilter(ev, ["INPUT", "TEXTAREA", "SELECT"]);
 };
+export interface HotkeysEvent {
+  key: string;
+  method: KeyHandler;
+  mods: number[];
+  scope: string;
+  shortcut: string;
+}
+
+export interface KeyHandler {
+  (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent): void | boolean;
+}
 
 export type Options = {
   enabled?: boolean; // Main setting that determines if the hotkey is enabled or not. (Default: true)
@@ -36,27 +47,36 @@ export type Options = {
 };
 
 export function useHotkeys<T extends Element>(
-  keys: string,
-  callback: KeyHandler,
+  keyActionMap: Record<string, Function>,
+  ref: React.MutableRefObject<T | null>,
   options?: Options
-): React.MutableRefObject<T | null>;
+);
 export function useHotkeys<T extends Element>(
   keys: string,
   callback: KeyHandler,
+  ref: React.MutableRefObject<T | null>,
+  options?: Options
+);
+export function useHotkeys<T extends Element>(
+  keys: string,
+  callback: KeyHandler,
+  ref: React.MutableRefObject<T | null>,
   deps?: any[]
-): React.MutableRefObject<T | null>;
+);
 export function useHotkeys<T extends Element>(
   keys: string,
   callback: KeyHandler,
+  ref: React.MutableRefObject<T | null>,
   options?: Options,
   deps?: any[]
-): React.MutableRefObject<T | null>;
+);
 export function useHotkeys<T extends Element>(
   keys: string,
   callback: KeyHandler,
+  ref: React.MutableRefObject<T | null>,
   options?: any[] | Options,
   deps?: any[]
-): React.MutableRefObject<T | null> {
+) {
   if (options instanceof Array) {
     deps = options;
     options = undefined;
@@ -71,12 +91,12 @@ export function useHotkeys<T extends Element>(
     enabled = true,
     enableOnContentEditable = false,
   } = (options as Options) || {};
-  const ref = useRef<T | null>(null);
 
   // The return value of this callback determines if the browsers default behavior is prevented.
   const memoisedCallback = useCallback(
     (keyboardEvent: KeyboardEvent, hotkeysEvent: HotkeysEvent) => {
       if (filter && !filter(keyboardEvent)) {
+        console.log("filtered");
         return !filterPreventDefault;
       }
 
@@ -111,7 +131,8 @@ export function useHotkeys<T extends Element>(
       return;
     }
 
-    // In this case keydown is likely undefined, so we set it to false, since hotkeys needs the `keydown` key to have a value.
+    // In this case keydown is likely undefined, so we set it to false,
+    // since hotkeys sets `keydown` to true in absense of explicit setting.
     if (keyup && keydown !== true) {
       (options as Options).keydown = false;
     }
@@ -120,6 +141,4 @@ export function useHotkeys<T extends Element>(
 
     return () => hotkeys.unbind(keys, memoisedCallback);
   }, [memoisedCallback, keys, enabled]);
-
-  return ref;
 }

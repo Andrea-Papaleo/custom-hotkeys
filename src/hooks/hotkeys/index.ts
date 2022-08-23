@@ -28,6 +28,7 @@ function getPressedKeyCodes() {
 
 // Form control control judgment returns Boolean
 // hotkey is effective only when filter return true
+/*
 function filter(event) {
   const target = event.target || event.srcElement;
   const { tagName } = target;
@@ -42,11 +43,15 @@ function filter(event) {
   }
   return flag;
 }
+*/
+function filter(event) {
+  return true;
+}
 
 // Determine whether the pressed key is a certain key, return true or false
 function isPressed(keyCode) {
   if (typeof keyCode === "string") {
-    keyCode = code(keyCode); // 转换成键码
+    keyCode = code(keyCode); // Convert to keycode
   }
   return _downKeys.indexOf(keyCode) !== -1;
 }
@@ -176,11 +181,7 @@ function eventHandler(event, handler, scope, element) {
 
     // Call the handler, if it is a modifier key, no processing
     if (
-      (handler.mods.length === 0 &&
-        !_mods[16] &&
-        !_mods[18] &&
-        !_mods[17] &&
-        !_mods[91]) ||
+      (handler.mods.length === 0 && !_mods[18] && !_mods[17] && !_mods[91]) ||
       modifiersMatch ||
       handler.shortcut === "*"
     ) {
@@ -217,8 +218,9 @@ function dispatch(event, element) {
    * Jest test cases are required.
    * ===============================
    */
-  ["ctrlKey", "altKey", "shiftKey", "metaKey"].forEach((keyName) => {
+  ["ctrlKey", "altKey", "metaKey"].forEach((keyName) => {
     const keyNum = modifierMap[keyName];
+
     if (event[keyName] && _downKeys.indexOf(keyNum) === -1) {
       _downKeys.push(keyNum);
     } else if (!event[keyName] && _downKeys.indexOf(keyNum) > -1) {
@@ -232,10 +234,12 @@ function dispatch(event, element) {
        * Fix if Command is pressed:
        * ===============================
        */
-      if (!(event.ctrlKey || event.shiftKey || event.altKey)) {
+
+      if (!(event.ctrlKey || event.altKey)) {
         _downKeys = _downKeys.slice(_downKeys.indexOf(keyNum));
       }
     }
+    console.log(_downKeys);
   });
   /**
    * -------------------------------
@@ -320,7 +324,7 @@ function dispatch(event, element) {
   }
 }
 
-// 判断 element 是否已经绑定事件
+// Determine if element has bound events
 function isElementBind(element) {
   return elementHasBindEvent.indexOf(element) > -1;
 }
@@ -331,7 +335,7 @@ function hotkeys(key, option, method) {
   let mods = [];
   let scope = "all"; // scope defaults to all, all scopes are valid
   let element = document; // Shortcut key event binding node
-  let i = 0;
+
   let keyup = false;
   let keydown = true;
   let splitKey = "+";
@@ -354,7 +358,7 @@ function hotkeys(key, option, method) {
   if (typeof option === "string") scope = option;
 
   // for each shortcut key
-  for (; i < keys.length; i++) {
+  for (let i = 0; i < keys.length; i++) {
     key = keys[i].split(splitKey); // key list
     mods = [];
 
